@@ -1,35 +1,41 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
-import { InputText } from '../../components/ui/InputText';
 import { Select } from '../../components/ui/Select';
 import { Search, Filter, Calendar, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../../utils/cn';
+import { api } from '../../services/api';
+import { toast } from 'react-toastify';
 
 export default function Campaigns() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const mockCampaigns = [
-    { id: 1, nome: 'Brasileirão 2026', codigo: 'BRA26', tipo: 'Futebol', taxa: 10, valor: 50, dt_inicio: '2026-05-01', dt_fim: '2026-12-01', status: 'ATIVA' },
-    { id: 2, nome: 'Copa Libertadores', codigo: 'LIB26', tipo: 'Futebol', taxa: 5, valor: 30, dt_inicio: '2026-02-01', dt_fim: '2026-11-01', status: 'ATIVA' },
-    { id: 3, nome: 'Paulistão 2026', codigo: 'PAU26', tipo: 'Futebol', taxa: 0, valor: 20, dt_inicio: '2026-01-15', dt_fim: '2026-04-10', status: 'ENCERRADA' },
-    { id: 4, nome: 'Oscar 2026', codigo: 'OSC26', tipo: 'Entretenimento', taxa: 0, valor: 10, dt_inicio: '2026-02-01', dt_fim: '2026-03-15', status: 'EM APURAÇÃO' },
-  ];
+  useEffect(() => {
+    api.get('/campanhas')
+      .then(res => setCampaigns(res.data))
+      .catch(err => {
+        console.error(err);
+        toast.error('Erro ao carregar campanhas');
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'ATIVA': return <Badge variant="success">Ativa</Badge>;
+      case 'ABERTA': return <Badge variant="success">Ativa</Badge>;
       case 'ENCERRADA': return <Badge variant="default">Encerrada</Badge>;
-      case 'EM APURAÇÃO': return <Badge variant="warning">Em apuração</Badge>;
+      case 'APURADA': return <Badge variant="warning">Apurada</Badge>;
       case 'INATIVA': return <Badge variant="error">Inativa</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };
 
-  const filteredCampaigns = mockCampaigns.filter(c => 
+  const filteredCampaigns = campaigns.filter(c => 
     c.nome.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (statusFilter === '' || c.status === statusFilter)
   );
@@ -62,8 +68,8 @@ export default function Campaigns() {
               onChange={(e) => setStatusFilter(e.target.value)}
               options={[
                 { label: 'Todos os Status', value: '' },
-                { label: 'Ativas', value: 'ATIVA' },
-                { label: 'Em Apuração', value: 'EM APURAÇÃO' },
+                { label: 'Ativas', value: 'ABERTA' },
+                { label: 'Apuradas', value: 'APURADA' },
                 { label: 'Encerradas', value: 'ENCERRADA' },
               ]}
             />
@@ -74,6 +80,8 @@ export default function Campaigns() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredCampaigns.map(campanha => {
           const isClosed = campanha.status === 'ENCERRADA' || campanha.status === 'INATIVA';
+          const valor = Number(campanha.valorBolao) || 0;
+          const taxa = Number(campanha.taxaOperacional) || 0;
           
           return (
             <Card key={campanha.id} className={cn("transition-all duration-200", isClosed ? "opacity-75 bg-gray-50/50" : "hover:shadow-md hover:border-blue-200")}>
@@ -86,7 +94,7 @@ export default function Campaigns() {
                       </div>
                       <div>
                         <h3 className="font-bold text-gray-900 leading-tight">{campanha.nome}</h3>
-                        <p className="text-xs text-gray-500 font-medium mt-1">Cód: {campanha.codigo}</p>
+                        <p className="text-xs text-gray-500 font-medium mt-1">Cód: {campanha.codigoCampanha}</p>
                       </div>
                     </div>
                     {getStatusBadge(campanha.status)}
@@ -95,11 +103,11 @@ export default function Campaigns() {
                   <div className="grid grid-cols-2 gap-4 mt-4">
                     <div>
                       <p className="text-xs text-gray-500 mb-1">Valor do Bolão</p>
-                      <p className="font-semibold text-gray-900">R$ {campanha.valor.toFixed(2).replace('.', ',')}</p>
+                      <p className="font-semibold text-gray-900">R$ {valor.toFixed(2).replace('.', ',')}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 mb-1">Taxa Operacional</p>
-                      <p className="font-medium text-gray-700">{campanha.taxa}%</p>
+                      <p className="font-medium text-gray-700">{taxa}%</p>
                     </div>
                   </div>
                 </div>
@@ -107,7 +115,7 @@ export default function Campaigns() {
                 <div className="p-5 bg-gray-50/50 flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <Calendar size={14} />
-                    <span>{new Date(campanha.dt_inicio).toLocaleDateString('pt-BR')} até {new Date(campanha.dt_fim).toLocaleDateString('pt-BR')}</span>
+                    <span>{new Date(campanha.dtInicio).toLocaleDateString('pt-BR')} até {new Date(campanha.dtFim).toLocaleDateString('pt-BR')}</span>
                   </div>
                   <Link to={`/campanhas/${campanha.id}`}>
                     <Button variant={isClosed ? 'outline' : 'primary'} size="sm">
@@ -119,7 +127,7 @@ export default function Campaigns() {
             </Card>
           );
         })}
-        {filteredCampaigns.length === 0 && (
+        {filteredCampaigns.length === 0 && !isLoading && (
           <div className="col-span-full py-12 text-center text-gray-500">
             Nenhuma campanha encontrada com os filtros atuais.
           </div>

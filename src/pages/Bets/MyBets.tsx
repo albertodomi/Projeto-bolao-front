@@ -1,41 +1,62 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Select } from '../../components/ui/Select';
 import { Calendar, Trophy, XCircle, Clock } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { api } from '../../services/api';
+import { toast } from 'react-toastify';
 
 export default function MyBets() {
   const [filter, setFilter] = useState('');
+  const [bets, setBets] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const mockBets = [
-    { id: 1, campanha: 'Brasileirão 2026', opcao: 'Flamengo Campeão', meio_pagamento: 'PIX', status: 'VENCEDORA', valor: 50, date: '2026-05-10', status_campanha: 'ENCERRADA' },
-    { id: 2, campanha: 'Copa do Mundo 2026', opcao: 'Brasil Hexa', meio_pagamento: 'Cartão de Crédito', status: 'EM ABERTO', valor: 100, date: '2026-05-27', status_campanha: 'ATIVA' },
-    { id: 3, campanha: 'Libertadores 2026', opcao: 'Palmeiras', meio_pagamento: 'PIX', status: 'PERDEDORA', valor: 30, date: '2026-05-25', status_campanha: 'ENCERRADA' },
-  ];
+  useEffect(() => {
+    api.get('/apostas/minhas')
+      .then(res => setBets(res.data))
+      .catch(err => {
+        console.error(err);
+        toast.error('Erro ao carregar apostas');
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
 
-  const filteredBets = mockBets.filter(bet => {
-    if (filter === '') return true;
-    return bet.status === filter;
-  });
+  const getStatusText = (bet: any) => {
+    const campaignStatus = bet.campanhaOpcao?.campanha?.status;
+    if (campaignStatus === 'APURADA') {
+      return bet.campanhaOpcao?.ehResultadoFinal ? 'VENCEDORA' : 'PERDEDORA';
+    }
+    return bet.status; // PENDENTE, CONFIRMADA, CANCELADA
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'VENCEDORA': return <Trophy size={20} className="text-green-600" />;
       case 'PERDEDORA': return <XCircle size={20} className="text-red-600" />;
-      case 'EM ABERTO': return <Clock size={20} className="text-blue-600" />;
+      case 'PENDENTE': return <Clock size={20} className="text-yellow-600" />;
+      case 'CONFIRMADA': return <Clock size={20} className="text-blue-600" />;
+      case 'CANCELADA': return <XCircle size={20} className="text-gray-600" />;
       default: return null;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'VENCEDORA': return 'bg-green-50 border-green-200';
-      case 'PERDEDORA': return 'bg-red-50 border-red-200';
-      case 'EM ABERTO': return 'bg-blue-50 border-blue-200';
+      case 'VENCEDORA': return 'bg-green-50 border-green-200 text-green-700';
+      case 'PERDEDORA': return 'bg-red-50 border-red-200 text-red-700';
+      case 'PENDENTE': return 'bg-yellow-50 border-yellow-200 text-yellow-700';
+      case 'CONFIRMADA': return 'bg-blue-50 border-blue-200 text-blue-700';
+      case 'CANCELADA': return 'bg-gray-50 border-gray-200 text-gray-700';
       default: return 'bg-gray-50 border-gray-200';
     }
   };
+
+  const filteredBets = bets.filter(bet => {
+    const displayStatus = getStatusText(bet);
+    if (filter === '') return true;
+    return displayStatus === filter;
+  });
 
   return (
     <div className="space-y-6">
@@ -50,55 +71,65 @@ export default function MyBets() {
             onChange={(e) => setFilter(e.target.value)}
             options={[
               { label: 'Todas as Apostas', value: '' },
-              { label: 'Em Aberto', value: 'EM ABERTO' },
+              { label: 'Pendentes', value: 'PENDENTE' },
+              { label: 'Confirmadas', value: 'CONFIRMADA' },
               { label: 'Vencedoras', value: 'VENCEDORA' },
               { label: 'Perdedoras', value: 'PERDEDORA' },
+              { label: 'Canceladas', value: 'CANCELADA' },
             ]}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {filteredBets.map(bet => (
-          <Card key={bet.id} className={cn("overflow-hidden border-l-4 transition-all hover:shadow-md", 
-            bet.status === 'VENCEDORA' ? 'border-l-green-500' : 
-            bet.status === 'PERDEDORA' ? 'border-l-red-500' : 
-            'border-l-blue-500'
-          )}>
-            <CardContent className="p-0 flex flex-col md:flex-row">
-              <div className={cn("p-6 flex flex-col justify-center items-center shrink-0 w-full md:w-32", getStatusColor(bet.status))}>
-                {getStatusIcon(bet.status)}
-                <span className="text-xs font-bold mt-2 uppercase text-center w-full">{bet.status}</span>
-              </div>
-              <div className="p-6 flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-500 font-medium">Campanha</p>
-                  <p className="font-semibold text-gray-900">{bet.campanha}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-500 font-medium">Sua Opção</p>
-                  <p className="font-semibold text-gray-900">{bet.opcao}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-500 font-medium">Pagamento</p>
-                  <p className="text-sm text-gray-700">{bet.meio_pagamento}</p>
-                  <p className="font-bold text-gray-900 mt-1">R$ {bet.valor.toFixed(2).replace('.', ',')}</p>
-                </div>
-                <div className="space-y-1 md:text-right flex flex-col md:items-end justify-center">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
-                    <Calendar size={14} />
-                    <span>{new Date(bet.date).toLocaleDateString('pt-BR')}</span>
-                  </div>
-                  <Badge variant={bet.status_campanha === 'ATIVA' ? 'success' : 'default'}>
-                    Campanha {bet.status_campanha}
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {filteredBets.map(bet => {
+          const displayStatus = getStatusText(bet);
+          const valor = Number(bet.campanhaOpcao?.campanha?.valorBolao) || 0;
+          const statusCampanha = bet.campanhaOpcao?.campanha?.status;
 
-        {filteredBets.length === 0 && (
+          return (
+            <Card key={bet.id} className={cn("overflow-hidden border-l-4 transition-all hover:shadow-md", 
+              displayStatus === 'VENCEDORA' ? 'border-l-green-500' : 
+              displayStatus === 'PERDEDORA' ? 'border-l-red-500' : 
+              displayStatus === 'PENDENTE' ? 'border-l-yellow-500' :
+              displayStatus === 'CANCELADA' ? 'border-l-gray-500' :
+              'border-l-blue-500'
+            )}>
+              <CardContent className="p-0 flex flex-col md:flex-row">
+                <div className={cn("p-6 flex flex-col justify-center items-center shrink-0 w-full md:w-32", getStatusColor(displayStatus))}>
+                  {getStatusIcon(displayStatus)}
+                  <span className="text-xs font-bold mt-2 uppercase text-center w-full">{displayStatus}</span>
+                </div>
+                <div className="p-6 flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-500 font-medium">Campanha</p>
+                    <p className="font-semibold text-gray-900">{bet.campanhaOpcao?.campanha?.nome}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-500 font-medium">Sua Opção</p>
+                    <p className="font-semibold text-gray-900">{bet.campanhaOpcao?.descricao}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-500 font-medium">Pagamento</p>
+                    <p className="text-sm text-gray-700">{bet.meioPagamento?.descricao}</p>
+                    <p className="font-bold text-gray-900 mt-1">R$ {valor.toFixed(2).replace('.', ',')}</p>
+                  </div>
+                  <div className="space-y-1 md:text-right flex flex-col md:items-end justify-center">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
+                      <Calendar size={14} />
+                      <span>{new Date(bet.dtCriacao).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                    <Badge variant={statusCampanha === 'ABERTA' ? 'success' : 'default'}>
+                      Campanha {statusCampanha}
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+
+        {filteredBets.length === 0 && !isLoading && (
           <div className="py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-200 border-dashed">
             Nenhuma aposta encontrada com este filtro.
           </div>

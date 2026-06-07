@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import type { Bet } from '../types';
 
 interface BetFilters {
   status: string; // 'Em aberto', 'Finalizadas', 'Vencedoras', 'Perdedoras'

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Trophy, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';

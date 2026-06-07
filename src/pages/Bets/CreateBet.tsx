@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
 import { ArrowLeft, UploadCloud, FileText, Image as ImageIcon, X } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { api } from '../../services/api';
 
 export default function CreateBet() {
   const { id } = useParams();
@@ -12,14 +13,37 @@ export default function CreateBet() {
   const opcaoId = searchParams.get('opcao');
   const navigate = useNavigate();
 
+  const [campanha, setCampanha] = useState<any>(null);
+  const [opcaoSelecionada, setOpcaoSelecionada] = useState<any>(null);
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+
   const [paymentMethod, setPaymentMethod] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock campaign and option data
-  const campanha = { nome: 'Brasileirão 2026', valor: 50 };
-  const opcaoSelecionada = { descricao: 'Flamengo Campeão' }; // Em um cenário real, buscaríamos da API usando id e opcaoId
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const campRes = await api.get(`/campanhas/${id}`);
+        setCampanha(campRes.data);
+
+        const opcoesRes = await api.get(`/campanhas/${id}/opcoes`);
+        const found = opcoesRes.data.find((o: any) => o.id === Number(opcaoId));
+        setOpcaoSelecionada(found);
+
+        const methodsRes = await api.get('/meios-pagamento');
+        setPaymentMethods(methodsRes.data);
+      } catch (err) {
+        console.error(err);
+        toast.error('Erro ao carregar dados da aposta');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, [id, opcaoId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -45,7 +69,7 @@ export default function CreateBet() {
       };
       reader.readAsDataURL(selectedFile);
     } else {
-      setPreview(null); // It's a PDF
+      setPreview(null);
     }
   };
 
@@ -59,23 +83,41 @@ export default function CreateBet() {
       toast.error('Selecione um meio de pagamento.');
       return;
     }
-    if (!file) {
-      toast.error('Anexe o comprovante de pagamento.');
+
+    const selectedMethod = paymentMethods.find(m => String(m.id) === paymentMethod);
+    if (selectedMethod?.exigeComprovante && !file) {
+      toast.error('Este meio de pagamento exige o envio de comprovante.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Mock API post
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await api.post('/apostas', {
+        campanha_opcao_id: Number(opcaoId),
+        meio_pagamento_id: Number(paymentMethod),
+        comprovante: file ? file.name : undefined
+      });
       toast.success('Aposta realizada com sucesso!');
       navigate('/minhas-apostas');
-    } catch (error) {
-      toast.error('Erro ao realizar aposta. Tente novamente.');
+    } catch (error: any) {
+      console.error(error);
+      const msg = error.response?.data?.message || 'Erro ao realizar aposta. Tente novamente.';
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return <div className="text-center py-12 text-gray-500">Carregando dados da aposta...</div>;
+  }
+
+  if (!campanha || !opcaoSelecionada) {
+    return <div className="text-center py-12 text-gray-500 font-medium">Dados da campanha ou opção não encontrados.</div>;
+  }
+
+  const selectedMethod = paymentMethods.find(m => String(m.id) === paymentMethod);
+  const requiresReceipt = selectedMethod?.exigeComprovante;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -107,7 +149,7 @@ export default function CreateBet() {
             <div className="hidden md:block w-px h-10 bg-blue-200"></div>
             <div className="md:text-right">
               <p className="text-sm text-blue-600 font-medium mb-1">Valor a Pagar</p>
-              <p className="text-xl font-black text-blue-900">R$ {campanha.valor.toFixed(2).replace('.', ',')}</p>
+              <p className="text-xl font-black text-blue-900">R$ {(Number(campanha.valorBolao) || 0).toFixed(2).replace('.', ',')}</p>
             </div>
           </div>
         </CardContent>
@@ -123,16 +165,14 @@ export default function CreateBet() {
               label="Meio de Pagamento"
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              options={[
-                { label: 'PIX', value: '1' },
-                { label: 'Transferência Bancária', value: '2' },
-                { label: 'Cartão de Crédito', value: '3' },
-              ]}
+              options={paymentMethods.map(m => ({ label: m.descricao, value: String(m.id) }))}
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-2">Comprovante de Pagamento</label>
+            <label className="text-sm font-medium text-gray-700 block mb-2">
+              Comprovante de Pagamento {requiresReceipt && <span className="text-red-500">* (Obrigatório)</span>}
+            </label>
             {!file ? (
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
                 <input 
@@ -158,7 +198,7 @@ export default function CreateBet() {
                   <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
                   <p className="text-xs text-gray-500 mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
-                <button onClick={removeFile} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                <button onClick={removeFile} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors cursor-pointer">
                   <X size={20} />
                 </button>
               </div>

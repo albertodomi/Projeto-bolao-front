@@ -1,40 +1,64 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
-import { Plus, Edit, List, Ban, PlayCircle, Trophy } from 'lucide-react';
+import { Plus, Edit, Ban, PlayCircle, Trophy, List } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { api } from '../../../services/api';
+import { toast } from 'react-toastify';
 
 export default function AdminCampaigns() {
-  const [campaigns, setCampaigns] = useState([
-    { id: 1, nome: 'Brasileirão 2026', codigo: 'BRA26', status: 'ATIVA', dt_inicio: '2026-05-01', dt_fim: '2026-12-01' },
-    { id: 2, nome: 'Copa Libertadores', codigo: 'LIB26', status: 'ATIVA', dt_inicio: '2026-02-01', dt_fim: '2026-11-01' },
-    { id: 3, nome: 'Paulistão 2026', codigo: 'PAU26', status: 'ENCERRADA', dt_inicio: '2026-01-15', dt_fim: '2026-04-10' },
-  ]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchCampaigns = async () => {
+    try {
+      const res = await api.get('/campanhas');
+      setCampaigns(res.data);
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao carregar campanhas');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCampaigns();
+  }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'ATIVA': return <Badge variant="success">Ativa</Badge>;
+      case 'ABERTA': return <Badge variant="success">Aberta</Badge>;
       case 'ENCERRADA': return <Badge variant="default">Encerrada</Badge>;
-      case 'EM APURAÇÃO': return <Badge variant="warning">Em apuração</Badge>;
+      case 'APURADA': return <Badge variant="warning">Apurada</Badge>;
       case 'INATIVA': return <Badge variant="error">Inativa</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };
 
-  const toggleStatus = (id: number) => {
-    setCampaigns(campaigns.map(c => {
-      if (c.id === id) {
-        if (c.status === 'ATIVA') return { ...c, status: 'INATIVA' };
-        if (c.status === 'INATIVA') return { ...c, status: 'ATIVA' };
-      }
-      return c;
-    }));
+  const toggleStatus = async (id: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'ABERTA' ? 'INATIVA' : 'ABERTA';
+    try {
+      await api.patch(`/campanhas/${id}/status`, { status: newStatus });
+      setCampaigns(campaigns.map(c => c.id === id ? { ...c, status: newStatus } : c));
+      toast.success('Status da campanha atualizado!');
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Erro ao atualizar status');
+    }
   };
 
-  const endCampaign = (id: number) => {
-    if (window.confirm('Tem certeza que deseja encerrar esta campanha? Ela entrará em apuração.')) {
-      setCampaigns(campaigns.map(c => c.id === id ? { ...c, status: 'EM APURAÇÃO' } : c));
+  const endCampaign = async (id: number) => {
+    if (window.confirm('Tem certeza que deseja encerrar esta campanha? Ela não aceitará novas apostas.')) {
+      try {
+        await api.patch(`/campanhas/${id}/status`, { status: 'ENCERRADA' });
+        setCampaigns(campaigns.map(c => c.id === id ? { ...c, status: 'ENCERRADA' } : c));
+        toast.success('Campanha encerrada com sucesso!');
+      } catch (err: any) {
+        console.error(err);
+        toast.error('Erro ao encerrar campanha');
+      }
     }
   };
 
@@ -75,34 +99,34 @@ export default function AdminCampaigns() {
                         {c.nome}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-600 font-mono text-xs">{c.codigo}</td>
+                    <td className="px-6 py-4 text-gray-600 font-mono text-xs">{c.codigoCampanha}</td>
                     <td className="px-6 py-4 text-gray-500">
-                      {new Date(c.dt_inicio).toLocaleDateString('pt-BR')} - {new Date(c.dt_fim).toLocaleDateString('pt-BR')}
+                      {new Date(c.dtInicio).toLocaleDateString('pt-BR')} - {new Date(c.dtFim).toLocaleDateString('pt-BR')}
                     </td>
                     <td className="px-6 py-4">{getStatusBadge(c.status)}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end items-center gap-2">
                         <Link to={`/admin/campanhas/${c.id}`} title="Editar">
-                          <button className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
+                          <button className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors cursor-pointer">
                             <Edit size={16} />
                           </button>
                         </Link>
                         
-                        {(c.status === 'ATIVA' || c.status === 'INATIVA') && (
+                        {(c.status === 'ABERTA' || c.status === 'INATIVA') && (
                           <button 
-                            onClick={() => toggleStatus(c.id)}
-                            title={c.status === 'ATIVA' ? 'Inativar' : 'Ativar'}
-                            className="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-colors"
+                            onClick={() => toggleStatus(c.id, c.status)}
+                            title={c.status === 'ABERTA' ? 'Inativar' : 'Ativar'}
+                            className="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-colors cursor-pointer"
                           >
-                            {c.status === 'ATIVA' ? <Ban size={16} /> : <PlayCircle size={16} />}
+                            {c.status === 'ABERTA' ? <Ban size={16} /> : <PlayCircle size={16} />}
                           </button>
                         )}
 
-                        {c.status === 'ATIVA' && (
+                        {c.status === 'ABERTA' && (
                           <button 
                             onClick={() => endCampaign(c.id)}
                             title="Encerrar / Apurar"
-                            className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors cursor-pointer"
                           >
                             <List size={16} />
                           </button>
@@ -111,6 +135,13 @@ export default function AdminCampaigns() {
                     </td>
                   </tr>
                 ))}
+                {campaigns.length === 0 && !isLoading && (
+                  <tr>
+                    <td colSpan={5} className="text-center py-8 text-gray-500 font-medium">
+                      Nenhuma campanha cadastrada.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

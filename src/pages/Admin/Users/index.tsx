@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
-import { InputText } from '../../../components/ui/InputText';
 import { Select } from '../../../components/ui/Select';
 import { Search, Filter, Shield, User, Ban, CheckCircle } from 'lucide-react';
 import { cn } from '../../../utils/cn';
