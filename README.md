@@ -1,73 +1,42 @@
-# React + TypeScript + Vite
+# 👋 Olá! Bem-vindo ao Frontend do Projeto Bolão ⚽
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Que bom ter você por aqui! Este é o repositório onde vive a interface do **Projeto Bolão**. 
 
-Currently, two official plugins are available:
+Sabe aquela dor de cabeça de organizar apostas, planilhas infinitas e tentar lembrar quem apostou no quê? Então, a ideia aqui é resolver exatamente isso! Criamos um sistema focado em facilitar a vida de quem organiza e de quem participa de bolões. 
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+O usuário tem seu próprio cantinho para dar seus palpites, enquanto a administração conta com um painel completo para gerenciar as campanhas e a galera toda. Tudo isso em uma interface rápida e intuitiva.
 
-## React Compiler
+## 🛠️ O que rola por baixo dos panos (Nossa Stack)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Para garantir que tudo funcione de forma lisa e sem engasgos, escolhemos ferramentas modernas que a gente adora usar:
 
-## Expanding the ESLint configuration
+*   **A base de tudo:** [React 19](https://react.dev/) rodando com o [Vite](https://vitejs.dev/) (porque a gente gosta de build rápido!).
+*   **Para não nos perdermos nos tipos:** [TypeScript](https://www.typescriptlang.org/).
+*   **Deixando tudo bonitão:** [Tailwind CSS v4](https://tailwindcss.com/) para estilização rápida e responsiva.
+*   **Gerenciando o estado sem complicação:** [Zustand](https://zustand-demo.pmnd.rs/) (simples e direto ao ponto).
+*   **Lidando com a API e cache:** [React Query](https://tanstack.com/query/latest) para as requisições ficarem super otimizadas.
+*   **Formulários à prova de balas:** [React Hook Form](https://react-hook-form.com/) junto com o [Zod](https://zod.dev/) para validação.
+*   **Outros detalhes legais:** [Axios](https://axios-http.com/) para as chamadas HTTP, [Lucide React](https://lucide.dev/) para ícones bonitos e [React Toastify](https://fkhadra.github.io/react-toastify/) para dar aqueles avisos bacanas na tela.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🚀 Quer rodar na sua máquina? É super fácil!
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Se você quiser testar o projeto, brincar com o código ou contribuir, é só seguir este passo a passo:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+**1. Clone o repositório para a sua máquina**
+```bash
+git clone <sua-url-do-repositorio>
+2. Entre na pastinha do projeto
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Bash
+cd Projeto-bolao-front
+3. Instale as dependências
+Nós usamos o npm, então é só rodar:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Bash
+npm install
+4. Dê a partida! 🏎️
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Bash
+npm run dev
