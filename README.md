@@ -23,11 +23,11 @@ Para garantir que tudo funcione de forma lisa e sem engasgos, escolhemos ferrame
 ## 🚀 Quer rodar na sua máquina? É super fácil!
 
 Se você quiser testar o projeto, brincar com o código ou contribuir, é só seguir este passo a passo:
-
-**1. Clone o repositório para a sua máquina**
 ```bash
+**1. Clone o repositório para a sua máquina**
+
 git clone <sua-url-do-repositorio>
-2. Entre na pastinha do projeto
+2. Entre na pasta do projeto
 
 Bash
 cd Projeto-bolao-front
