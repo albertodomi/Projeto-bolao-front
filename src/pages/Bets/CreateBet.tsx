@@ -3,7 +3,8 @@ import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
-import { ArrowLeft, UploadCloud, FileText, Image as ImageIcon, X } from 'lucide-react';
+import { InputText } from '../../components/ui/InputText';
+import { ArrowLeft } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { api } from '../../services/api';
 
@@ -18,8 +19,7 @@ export default function CreateBet() {
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
 
   const [paymentMethod, setPaymentMethod] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [comprovante, setComprovante] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -45,39 +45,6 @@ export default function CreateBet() {
     fetchData();
   }, [id, opcaoId]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-
-    const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-    if (!validTypes.includes(selectedFile.type)) {
-      toast.error('Formato inválido. Aceitamos apenas JPG, PNG ou PDF.');
-      return;
-    }
-
-    if (selectedFile.size > 5 * 1024 * 1024) { // 5MB
-      toast.error('O arquivo deve ter no máximo 5MB.');
-      return;
-    }
-
-    setFile(selectedFile);
-
-    if (selectedFile.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(selectedFile);
-    } else {
-      setPreview(null);
-    }
-  };
-
-  const removeFile = () => {
-    setFile(null);
-    setPreview(null);
-  };
-
   const handleConfirm = async () => {
     if (!paymentMethod) {
       toast.error('Selecione um meio de pagamento.');
@@ -85,7 +52,7 @@ export default function CreateBet() {
     }
 
     const selectedMethod = paymentMethods.find(m => String(m.id) === paymentMethod);
-    if (selectedMethod?.exigeComprovante && !file) {
+    if (selectedMethod?.exigeComprovante && !comprovante.trim()) {
       toast.error('Este meio de pagamento exige o envio de comprovante.');
       return;
     }
@@ -95,13 +62,23 @@ export default function CreateBet() {
       await api.post('/apostas', {
         campanha_opcao_id: Number(opcaoId),
         meio_pagamento_id: Number(paymentMethod),
-        comprovante: file ? file.name : undefined
+        comprovante: comprovante.trim() || undefined
       });
       toast.success('Aposta realizada com sucesso!');
       navigate('/minhas-apostas');
     } catch (error: any) {
       console.error(error);
-      const msg = error.response?.data?.message || 'Erro ao realizar aposta. Tente novamente.';
+      let msg = 'Erro ao realizar aposta. Tente novamente.';
+      if (error.response?.data) {
+        if (error.response.data.error) {
+          msg = error.response.data.error;
+          if (error.response.data.details && Array.isArray(error.response.data.details)) {
+            msg += `: ${error.response.data.details.map((d: any) => d.message).join(', ')}`;
+          }
+        } else if (error.response.data.message) {
+          msg = error.response.data.message;
+        }
+      }
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
@@ -127,7 +104,7 @@ export default function CreateBet() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Realizar Aposta</h1>
-          <p className="text-gray-600">Finalize sua aposta anexando o comprovante</p>
+          <p className="text-gray-600">Finalize sua aposta inserindo o link do comprovante</p>
         </div>
       </div>
 
@@ -170,39 +147,16 @@ export default function CreateBet() {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-2">
-              Comprovante de Pagamento {requiresReceipt && <span className="text-red-500">* (Obrigatório)</span>}
-            </label>
-            {!file ? (
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
-                <input 
-                  type="file" 
-                  accept=".jpg,.jpeg,.png,.pdf" 
-                  onChange={handleFileChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                <UploadCloud className="mx-auto text-gray-400 mb-3" size={40} />
-                <p className="text-sm font-medium text-blue-600">Clique para anexar ou arraste o arquivo</p>
-                <p className="text-xs text-gray-500 mt-1">PNG, JPG ou PDF (Máx. 5MB)</p>
-              </div>
-            ) : (
-              <div className="border border-gray-200 rounded-lg p-4 flex gap-4 items-start bg-gray-50">
-                <div className="shrink-0 w-20 h-20 bg-gray-200 rounded-md overflow-hidden flex items-center justify-center">
-                  {preview ? (
-                    <img src={preview} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    file.type === 'application/pdf' ? <FileText size={32} className="text-gray-400" /> : <ImageIcon size={32} className="text-gray-400" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0 pt-1">
-                  <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                  <p className="text-xs text-gray-500 mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                </div>
-                <button onClick={removeFile} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors cursor-pointer">
-                  <X size={20} />
-                </button>
-              </div>
-            )}
+            <InputText 
+              label={`Link do Comprovante de Pagamento${requiresReceipt ? ' * (Obrigatório)' : ' (Opcional)'}`}
+              placeholder="https://exemplo.com/seu-comprovante.jpg"
+              value={comprovante}
+              onChange={(e) => setComprovante(e.target.value)}
+              disabled={isSubmitting}
+            />
+            <p className="text-xs text-gray-500 mt-1.5">
+              Insira um link direto (URL) para a imagem ou PDF do seu comprovante de pagamento (ex: Google Drive, Dropbox, link de imagem, etc.).
+            </p>
           </div>
         </CardContent>
       </Card>
