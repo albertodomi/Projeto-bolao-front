@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -55,6 +55,15 @@ export default function CreateBet() {
     if (selectedMethod?.exigeComprovante && !comprovante.trim()) {
       toast.error('Este meio de pagamento exige o envio de comprovante.');
       return;
+    }
+
+    if (comprovante.trim()) {
+      try {
+        new URL(comprovante.trim());
+      } catch (_) {
+        toast.error('O link do comprovante deve ser uma URL válida (ex: https://exemplo.com/comprovante.jpg).');
+        return;
+      }
     }
 
     setIsSubmitting(true);

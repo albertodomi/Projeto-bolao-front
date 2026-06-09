@@ -1,33 +1,56 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Select } from '../../../components/ui/Select';
 import { Search, Filter, Shield, User, Ban, CheckCircle } from 'lucide-react';
 import { cn } from '../../../utils/cn';
+import { api } from '../../../services/api';
+import { toast } from 'react-toastify';
 
 export default function AdminUsers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [users, setUsers] = useState([
-    { id: 1, nome: 'João da Silva', cpf: '111.111.111-11', email: 'joao@email.com', status: 'ATIVO', role: 'USER' },
-    { id: 2, nome: 'Maria Oliveira', cpf: '222.222.222-22', email: 'maria@email.com', status: 'INATIVO', role: 'USER' },
-    { id: 3, nome: 'Administrador', cpf: '000.000.000-00', email: 'admin@bolao.com', status: 'ATIVO', role: 'ADMIN' },
-  ]);
+  const fetchUsers = async () => {
+    try {
+      const res = await api.get('/usuarios');
+      setUsers(res.data);
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao carregar usuários');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const toggleStatus = (id: number) => {
-    setUsers(users.map(u => {
-      if (u.id === id && u.role !== 'ADMIN') { // Impede inativar admins por segurança básica
-        return { ...u, status: u.status === 'ATIVO' ? 'INATIVO' : 'ATIVO' };
-      }
-      return u;
-    }));
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const toggleStatus = async (id: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'ATIVO' ? 'INATIVO' : 'ATIVO';
+    try {
+      await api.patch(`/usuarios/${id}/status`, { status: newStatus });
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus } : u));
+      toast.success('Status do usuário atualizado!');
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Erro ao atualizar status do usuário');
+    }
   };
 
   const filteredUsers = users.filter(u => 
-    (u.nome.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase()) || u.cpf.includes(searchTerm)) &&
+    (u.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+     u.email.toLowerCase().includes(searchTerm.toLowerCase()) || 
+     u.cpf.includes(searchTerm)) &&
     (statusFilter === '' || u.status === statusFilter)
   );
+
+  if (isLoading) {
+    return <div className="text-center py-12 text-gray-500">Carregando usuários...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -100,9 +123,9 @@ export default function AdminUsers() {
                     <td className="px-6 py-4 text-right">
                       {u.role !== 'ADMIN' && (
                         <button 
-                          onClick={() => toggleStatus(u.id)}
+                          onClick={() => toggleStatus(u.id, u.status)}
                           className={cn(
-                            "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium ml-auto transition-colors",
+                            "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium ml-auto transition-colors cursor-pointer",
                             u.status === 'ATIVO' 
                               ? "text-red-600 bg-red-50 hover:bg-red-100" 
                               : "text-green-600 bg-green-50 hover:bg-green-100"
@@ -118,6 +141,13 @@ export default function AdminUsers() {
                     </td>
                   </tr>
                 ))}
+                {filteredUsers.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="text-center py-8 text-gray-500 font-medium">
+                      Nenhum usuário encontrado.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

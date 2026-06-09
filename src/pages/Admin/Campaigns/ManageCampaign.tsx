@@ -36,13 +36,7 @@ const TEAMS_SUGGESTIONS = [
   'Paris Saint-Germain', 'Arsenal', 'Chelsea', 'Juventus', 'Milan', 'Boca Juniors', 'River Plate'
 ];
 
-const MOVIES_SUGGESTIONS = [
-  'Oppenheimer', 'Barbie', 'Duna: Parte Dois', 'Pobres Criaturas',
-  'Anatomia de uma Queda', 'Vidas Passadas', 'Zona de Interesse',
-  'Ficção Americana', 'Os Rejeitados', 'Homem-Aranha: Através do Aranhaverso',
-  'Coringa: Delírio a Dois', 'Wicked', 'Gladiador 2', 'Nosferatu',
-  'Divertida Mente 2', 'Deadpool & Wolverine'
-];
+
 
 export default function ManageCampaign() {
   const { id } = useParams();
@@ -198,17 +192,6 @@ export default function ManageCampaign() {
     }
   };
 
-  const handleAddPredefinedOption = async (optionDesc: string) => {
-    try {
-      const res = await api.post(`/campanhas/${id}/opcoes`, { descricao: optionDesc });
-      setOpcoes([...opcoes, res.data]);
-      toast.success(`Opção "${optionDesc}" adicionada com sucesso!`);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.response?.data?.message || `Erro ao adicionar "${optionDesc}"`);
-    }
-  };
-
   const setWinner = async (optId: number) => {
     try {
       await api.post(`/campanha-opcoes/${optId}/definir-resultado-final`);
@@ -331,37 +314,7 @@ export default function ManageCampaign() {
                       </div>
                     )}
 
-                    {campaignTypeId === 2 && (
-                      <div className="bg-purple-50/50 border border-purple-100 rounded-xl p-4 space-y-3">
-                        <h4 className="text-xs font-bold text-purple-900 uppercase tracking-wider">
-                          Sugestões de Filmes (Entretenimento)
-                        </h4>
-                        <p className="text-xs text-purple-700">
-                          Clique em um filme para adicioná-lo instantaneamente como opção de aposta.
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {MOVIES_SUGGESTIONS.map((movie) => {
-                            const exists = opcoes.some(o => o.descricao.toLowerCase() === movie.toLowerCase());
-                            return (
-                              <button
-                                key={movie}
-                                type="button"
-                                disabled={exists}
-                                onClick={() => handleAddPredefinedOption(movie)}
-                                className={cn(
-                                  "px-2.5 py-1 text-xs font-medium rounded-full border transition-all cursor-pointer",
-                                  exists 
-                                    ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                                    : "bg-white text-purple-700 border-purple-200 hover:bg-purple-50 hover:border-purple-300"
-                                )}
-                              >
-                                {movie}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
+
 
                     <div className="flex gap-2">
                       <InputText 
