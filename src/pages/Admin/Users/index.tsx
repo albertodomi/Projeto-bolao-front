@@ -109,7 +109,9 @@ export default function AdminUsers() {
                         </div>
                         <div>
                           <p className={cn("font-medium", u.status === 'INATIVO' ? "text-gray-500" : "text-gray-900")}>{u.nome}</p>
-                          <p className="text-xs text-gray-500">{u.email}</p>
+                          <p className="text-xs text-gray-500">
+                            {u.email} {u.telefone ? `• ${u.telefone}` : ''}
+                          </p>
                         </div>
                       </div>
                     </td>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
-import { LogOut, LayoutDashboard, Users, User as UserIcon } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, User as UserIcon, Receipt } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 export const AdminLayout: React.FC = () => {
@@ -16,6 +16,7 @@ export const AdminLayout: React.FC = () => {
 
   const navItems = [
     { label: 'Campanhas', path: '/admin/campanhas', icon: LayoutDashboard },
+    { label: 'Apostas', path: '/admin/apostas', icon: Receipt },
     { label: 'Usuários', path: '/admin/usuarios', icon: Users },
   ];
 

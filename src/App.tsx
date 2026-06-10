@@ -17,6 +17,7 @@ import MyBets from './pages/Bets/MyBets';
 import AdminCampaigns from './pages/Admin/Campaigns';
 import ManageCampaign from './pages/Admin/Campaigns/ManageCampaign';
 import AdminUsers from './pages/Admin/Users';
+import AdminBets from './pages/Admin/Bets';
 
 function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode, requiredRole?: 'ADMIN' | 'USER' }) {
   const { isAuthenticated, user } = useAuthStore();
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="campanhas" element={<AdminCampaigns />} />
           <Route path="campanhas/nova" element={<ManageCampaign />} />
           <Route path="campanhas/:id" element={<ManageCampaign />} />
+          <Route path="apostas" element={<AdminBets />} />
           <Route path="usuarios" element={<AdminUsers />} />
         </Route>
 

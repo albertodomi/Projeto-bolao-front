@@ -35,10 +35,19 @@ export default function Campaigns() {
     }
   };
 
-  const filteredCampaigns = campaigns.filter(c => 
-    c.nome.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (statusFilter === '' || c.status === statusFilter)
-  );
+  const filteredCampaigns = campaigns
+    .filter(c => c.status !== 'INATIVA') // Do not show inactive campaigns to normal users
+    .filter(c => 
+      c.nome.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      (statusFilter === '' || c.status === statusFilter)
+    )
+    .sort((a, b) => {
+      // Sort ABERTA (active) campaigns to the top
+      if (a.status === 'ABERTA' && b.status !== 'ABERTA') return -1;
+      if (a.status !== 'ABERTA' && b.status === 'ABERTA') return 1;
+      // Then sort by start date descending (newest first)
+      return new Date(b.dtInicio).getTime() - new Date(a.dtInicio).getTime();
+    });
 
   return (
     <div className="space-y-6">

@@ -3,6 +3,7 @@ export type User = {
   nome: string;
   cpf: string;
   email: string;
+  telefone?: string;
   status: string;
   role?: 'ADMIN' | 'USER';
 };

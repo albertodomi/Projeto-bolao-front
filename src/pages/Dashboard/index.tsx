@@ -5,7 +5,6 @@ import { Badge } from '../../components/ui/Badge';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/useAuthStore';
-import { toast } from 'react-toastify';
 
 export default function Dashboard() {
   const { user } = useAuthStore();
@@ -13,23 +12,28 @@ export default function Dashboard() {
   const [bets, setBets] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchData = async (showLoading = true) => {
+    if (showLoading) setIsLoading(true);
+    try {
+      const [cRes, bRes] = await Promise.all([
+        api.get('/campanhas'),
+        api.get('/apostas/minhas')
+      ]);
+      setCampaigns(cRes.data);
+      setBets(bRes.data);
+    } catch (err) {
+      console.error(err);
+      // Removed toast to avoid spamming the user on every poll failure
+    } finally {
+      if (showLoading) setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [cRes, bRes] = await Promise.all([
-          api.get('/campanhas'),
-          api.get('/apostas/minhas')
-        ]);
-        setCampaigns(cRes.data);
-        setBets(bRes.data);
-      } catch (err) {
-        console.error(err);
-        toast.error('Erro ao carregar dados do painel');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
+    fetchData(true);
+    const intervalId = setInterval(() => fetchData(false), 10000); // Poll every 10 seconds
+
+    return () => clearInterval(intervalId); // Cleanup on unmount
   }, []);
 
   const activeCampaignsCount = campaigns.filter(c => c.status === 'ABERTA').length;
@@ -56,7 +60,7 @@ export default function Dashboard() {
     date: new Date(b.dtCriacao).toLocaleDateString('pt-BR')
   }));
 
-  const featuredCampaigns = campaigns.filter(c => c.status === 'ABERTA').slice(0, 2);
+  const featuredCampaigns = campaigns.filter(c => c.status === 'ABERTA').slice(0, 4);
 
   if (isLoading) {
     return <div className="text-center py-12 text-gray-500">Carregando painel...</div>;

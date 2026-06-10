@@ -10,6 +10,7 @@ export default function Register() {
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
   const [email, setEmail] = useState('');
+  const [telefone, setTelefone] = useState('');
   const [senha, setSenha] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +35,7 @@ export default function Register() {
 
     setIsLoading(true);
     try {
-      await api.post('/usuarios/register', { nome, cpf: cleanCpf, email, senha });
+      await api.post('/usuarios/register', { nome, cpf: cleanCpf, email, senha, telefone });
       
       // Auto-login
       const loginRes = await api.post('/auth/login', { email, senha });
@@ -95,6 +96,14 @@ export default function Register() {
           value={email} 
           onChange={e => setEmail(e.target.value)} 
           placeholder="seu@email.com"
+        />
+
+        <InputText 
+          label="Telefone"
+          required={false}
+          value={telefone} 
+          onChange={e => setTelefone(e.target.value)} 
+          placeholder="(11) 99999-9999"
         />
 
         <InputPassword 

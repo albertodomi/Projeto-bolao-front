@@ -23,20 +23,28 @@ Para garantir que tudo funcione de forma lisa e sem engasgos, escolhemos ferrame
 ## 🚀 Quer rodar na sua máquina? É super fácil!
 
 Se você quiser testar o projeto, brincar com o código ou contribuir, é só seguir este passo a passo:
-```bash
 **1. Clone o repositório para a sua máquina**
 
+```bash
 git clone <sua-url-do-repositorio>
-2. Entre na pasta do projeto
+```
 
-Bash
+**2. Entre na pasta do projeto**
+
+```bash
 cd Projeto-bolao-front
-3. Instale as dependências
+```
+
+**3. Instale as dependências**
+
 Nós usamos o npm, então é só rodar:
 
-Bash
+```bash
 npm install
-4. Dê a partida! 🏎️
+```
 
-Bash
+**4. Dê a partida! 🏎️**
+
+```bash
 npm run dev
+```

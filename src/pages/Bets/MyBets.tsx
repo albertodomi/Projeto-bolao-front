@@ -5,21 +5,29 @@ import { Select } from '../../components/ui/Select';
 import { Calendar, Trophy, XCircle, Clock } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { api } from '../../services/api';
-import { toast } from 'react-toastify';
 
 export default function MyBets() {
   const [filter, setFilter] = useState('');
   const [bets, setBets] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchBets = async () => {
+    try {
+      const res = await api.get('/apostas/minhas');
+      setBets(res.data);
+    } catch (err) {
+      console.error(err);
+      // Removed toast.error to avoid spamming the user on every poll failure
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    api.get('/apostas/minhas')
-      .then(res => setBets(res.data))
-      .catch(err => {
-        console.error(err);
-        toast.error('Erro ao carregar apostas');
-      })
-      .finally(() => setIsLoading(false));
+    fetchBets();
+    const intervalId = setInterval(fetchBets, 10000); // Poll every 10 seconds
+
+    return () => clearInterval(intervalId); // Cleanup on unmount
   }, []);
 
   const getStatusText = (bet: any) => {
